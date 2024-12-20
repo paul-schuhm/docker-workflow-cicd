@@ -5,8 +5,8 @@ Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
 ## Tester
 
 - **Avant** le build (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **CI**
-- **Pendant** le build. Test app + dépendances (environnement d'exec)
-- **Après** le build. Test app + dep + var
+- **Pendant** le build. Test **app+dépendances internes** (environnement d'exec)
+- **Après** le build. Test app + dépendances internes + **dep externes** (variables d'env, base de données, API), tests d'intégration/end2end, etc.
 
 ## Workflow
 
