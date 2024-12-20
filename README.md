@@ -2,6 +2,17 @@
 
 Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
 
+> En cours de construction...
+
+- [Démo - Containerize a PHP application](#démo---containerize-a-php-application)
+  - [Tester](#tester)
+  - [Workflow](#workflow)
+  - [Gestion des environnements](#gestion-des-environnements)
+  - [Mise en production Côté serveur (rapatrier la nouvelle image)](#mise-en-production-côté-serveur-rapatrier-la-nouvelle-image)
+  - [Workflow direct (sans passer par une plateforme CI/CD ni registre)](#workflow-direct-sans-passer-par-une-plateforme-cicd-ni-registre)
+  - [Références](#références)
+
+
 ## Tester
 
 - **Avant** le build (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **CI**
