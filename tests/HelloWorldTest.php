@@ -12,7 +12,7 @@ class HelloWorldTest extends PHPUnit\Framework\TestCase
     $output = ob_get_clean();
 
     // Assert that the output is "Hello, Docker!"
-    $this->assertEquals("hello, world", $output);
+    $this->assertEquals("Salut, world", $output);
  }
 }
 ?>

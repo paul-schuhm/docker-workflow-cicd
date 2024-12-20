@@ -7,7 +7,7 @@ Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
 - [Démo - Containerize a PHP application](#démo---containerize-a-php-application)
   - [Tester](#tester)
   - [Workflow](#workflow)
-  - [Gestion des environnements](#gestion-des-environnements)
+  - [Gestion des différents environnements](#gestion-des-différents-environnements)
   - [Mise en production Côté serveur (rapatrier la nouvelle image)](#mise-en-production-côté-serveur-rapatrier-la-nouvelle-image)
   - [Workflow direct (sans passer par une plateforme CI/CD ni registre)](#workflow-direct-sans-passer-par-une-plateforme-cicd-ni-registre)
   - [Références](#références)
@@ -40,11 +40,14 @@ Ce qui est *critique* c'est de **tester l'image qui sera déployée** (il faut q
 
 > Faire un fichier `Makefile` pour simplifier en local, ou un alias ou un script. Vous pouvez aussi utiliser les [hooks de git](https://git-scm.com/book/ms/v2/Customizing-Git-Git-Hooks). L'idée c'est que vous ne devez pas pouvoir échapper à votre procédure. Si vous oubliez de faire quelque chose, la procédure ne doit pas être déclenchée (pas de procédure incomplète) et vous devez être prévenu par un message d'erreur. **Faire en sorte d'avoir le moins de choses auxquelles penser**. Par ex, le push sur le dépôt distant devrait être automatiquement empêché si la suite de tests en local ne passe pas.
 
-## Gestion des environnements
+## Gestion des différents environnements
+
+> Chaque environnement peut définir des valeurs (variables d'env), des valeurs secretes (clé)
 
 - Une configuration *compose* par environnement. [Plusieurs stratégies](https://docs.docker.com/compose/how-tos/multiple-compose-files/) (include, merge, extends, profiles) :
 - Externalisation des variables d'environnement dans fichiers correspondants;
 - Chaque fichier compose utilise son fichier d'env;
+- Externalisation [des secrets](https://docs.docker.com/engine/swarm/secrets/) (à ne pas placer en variables d'environnement!)
 
 ## Mise en production Côté serveur (rapatrier la nouvelle image)
 
