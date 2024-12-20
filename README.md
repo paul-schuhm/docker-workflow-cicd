@@ -65,6 +65,18 @@ Pour *pull* dernière image **et être réversible** on peut :
 
 Il existe de nombreuses façons de mettre de déployer des images Docker, à vous d'utiliser la plus adaptée à votre contexte. Ce qui compte c'est que votre mise en production possède les caractéristiques énoncées plus haut (reproductible, déterministe, simple et réversible)
 
+## Workflow direct (sans passer par une plateforme CI/CD ni registre)
+
+1. Développe;
+2. Test;
+3. Build et test : `docker build --platform <votre plateforme cible> -t app:1 .`
+4. Compresse et déploie image via SSH avec scp : `docker save app:1 | gzip | ssh user@ip docker load`
+
+> L'image est directement envoyée via la sortie standard (stout) sur le serveur et chargée depuis l'entrée standard (stdint)
+
+5. Instancie nouveau conteneur: `ssh user@ip docker compose up -d app`
+
+
 ## Références
 
 - [Containerize a PHP application](https://docs.docker.com/guides/php/containerize/)
