@@ -51,15 +51,15 @@ Un exemple :
 
 Pour *pull* dernière image **et être réversible** on peut :
 
-1. Placer l'id de la nouvelle image dans un fichier d'env (.env.id) faire un lien symbolique `ln -s .env.id .env`. Le fichier .env pointe sur le dernier fichier `.env.id` contenant l'id de la nouvelle image. 
-2. Le fichier `.env` est utilisé par le fichier compose.yaml. Le fichier compose.yaml utilise la variable d'environnement pour le tag de l'image à utiliser `image: app:${VERSION}`
+1. Placer l'id de la nouvelle image dans un fichier d'env (`.env.x.y.z`) faire un lien symbolique `ln -s .env.x.y.z .env`. Le fichier `.env` pointe sur le dernier fichier `.env.x.y.z` contenant la version de la nouvelle image (nouveau tag) ; 
+2. Le fichier `.env` est utilisé par le fichier `compose.yaml`: il utilise et interpole la variable d'environnement pour le tag de l'image à utiliser dans la section `services`: `image: app:${VERSION}`
 3. Si besoin d'avancer à la version `x.y.z` :
    1. Créer un nouveau fichier `.env.x.y.z`
    2. Créer le lien symbolique `ln -s .env.x.y.z .env`
    3. Relancer les services basées sur les images mise à jour (`docker compose up`)
 4. Si besoin de *rollback*, il suffit de repointer sur le fichier d'env précédent et relancer les conteneurs à partir de l'image précédente (`up`)
 
-> Cette méthode de [liens symboliques](https://fr.wikipedia.org/wiki/Lien_symbolique) est très utilisée et commode. C'est ce que fait [l'excellent outil Capistrano](https://capistranorb.com/) sous le capot par exemple.
+> Cette méthode de [liens symboliques](https://fr.wikipedia.org/wiki/Lien_symbolique) est très utilisée et commode. C'est [ce que fait](https://capistranorb.com/documentation/getting-started/rollbacks/) par exemple [l'excellent outil Capistrano](https://capistranorb.com/).
 
 ~~~bash
 compose.yaml
