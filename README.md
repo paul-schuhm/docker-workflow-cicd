@@ -1,5 +1,6 @@
 # Démo - Containerize a PHP application
 
+Une démo de CI/CD d'une application PHP sur la plateforme Docker.
 
 
 ## Références
