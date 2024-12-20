@@ -51,15 +51,41 @@ Un exemple :
 
 Pour *pull* dernière image **et être réversible** on peut :
 
-1. Placer l'id de la nouvelle image dans un fichier d'env (.env.id) faire un lien symbolique `ln -s .env.id .env`. Le fichier .env pointe sur le dernier fichier `.env.id` contenant l'id de la nouvelle image
-2. Le fichier `.env` est utilisé par le fichier compose
+1. Placer l'id de la nouvelle image dans un fichier d'env (.env.id) faire un lien symbolique `ln -s .env.id .env`. Le fichier .env pointe sur le dernier fichier `.env.id` contenant l'id de la nouvelle image. 
+2. Le fichier `.env` est utilisé par le fichier compose.yaml. Le fichier compose.yaml utilise la variable d'environnement pour le tag de l'image à utiliser `image: app:${VERSION}`
 3. Si besoin d'avancer à la version `x.y.z` :
    1. Créer un nouveau fichier `.env.x.y.z`
    2. Créer le lien symbolique `ln -s .env.x.y.z .env`
    3. Relancer les services basées sur les images mise à jour (`docker compose up`)
-4. Si besoin de rollback, il suffit de repointer sur le fichier d'env précédent et relancer (up)
+4. Si besoin de *rollback*, il suffit de repointer sur le fichier d'env précédent et relancer les conteneurs à partir de l'image précédente (`up`)
 
-> Cette méthode de liens symboliques est très utilisée. C'est ce que fait [l'excellent outil Capistrano](https://capistranorb.com/) sous le capot par exemple.
+> Cette méthode de [liens symboliques](https://fr.wikipedia.org/wiki/Lien_symbolique) est très utilisée et commode. C'est ce que fait [l'excellent outil Capistrano](https://capistranorb.com/) sous le capot par exemple.
+
+~~~bash
+compose.yaml
+#Lien symbolique vers la version actuelle
+.env -> .env.1.2
+#Ancienne version pour le rollback
+.env.1
+.env.1.1
+.env.1.2
+~~~
+
+avec `compose.yaml`:
+
+~~~yaml
+services:
+   app:
+      image: ${REGISTRE}/app:${VERSION}
+~~~
+
+et les fichiers `.env`, par ex `.env.1.1` :
+
+~~~ini
+REGISTRE=vendor
+VERSION=1.1
+~~~
+
 
 > **Docker n'est pas un Framework de déploiement**. Docker offre l'artefact et la plateforme standardisés, ne vous dit pas comment vous devez distribuer vos artefacts.
 
