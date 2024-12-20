@@ -16,11 +16,11 @@ Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
 > Si `target` non précisée, docker utilise le dernier stage
 
 3. **Build et test en local** (app+deps): `docker build -t php-docker-image-test --progress plain --no-cache --target test .` (ne pas déclencher un CI/CD qui fail pour rien)
-4. Si tests passent, commit puis **push** sur le dépôt principal. Un hook (merge, commit) déclenche un job CD avec Github Actions ici
-   1. Build et test
-   2. Build et push
-5. La nouvelle image **est publiée sur un registre**, prêt à être déployée
-6. En production, **pull** la nouvelle image et **lancer** conteneurs à partir nouvelle image.
+4. Si tests passent, commit puis **push** sur le dépôt principal. Un hook (merge, commit) déclenche **un job CD** (avec Github Actions ici):
+   1. Build et test;
+   2. Build et push;
+5. La nouvelle image **est publiée sur un registre**, prête à être utilisée;
+6. En production, **pull** la nouvelle image et **instancier** conteneurs à partir de celle-ci.
 
 > Faire un fichier Makefile pour simplifier.
 
