@@ -29,5 +29,5 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          target: final
+          target: final #ici on build vers la version finale (prod)
           tags: ${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest

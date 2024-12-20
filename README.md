@@ -28,14 +28,15 @@ Ce qui est *critique* c'est de **tester l'image qui sera déployée** (il faut q
 1. **Développe** ;
 2. **Test** (app) : `docker compose run --build --rm server ./vendor/bin/phpunit tests/HelloWorldTest.php`. Voir le résultat sous forme de status code `echo $?`
 
-> Dans le cas d'un [multi-staged build](https://docs.docker.com/build/building/multi-stage/), si la valeur `target` n'est pas précisée, docker utilise le dernier stage du `Dockerfile`.
+> Dans le cas d'un [multi-staged build](https://docs.docker.com/build/building/multi-stage/), si la valeur `target` n'est pas précisée, docker utilise le dernier stage du `Dockerfile`, ici l'image pour la prod.
 
 3. **Build+test en local** (app+deps): `docker build -t php-docker-image-test --progress plain --no-cache --target test .` (ne pas déclencher un CI/CD qui fail pour rien)
-4. Si tests passent, commit puis **push** sur le dépôt principal. Un hook (merge, commit) déclenche **un job CD** (avec Github Actions ici):
+4. Si tests passent en local, **commit** puis **push** sur le dépôt *remote*. Un *hook* (merge, commit) déclenche **un job CD** (avec Github Actions ici):
    1. **Build+test**;
    2. **Build+push**;
 5. La nouvelle image **est publiée sur un registre**, avec un tag unique, prête à être utilisée;
-6. En production, **pull** la nouvelle image et **instancier** conteneurs à partir de celle-ci.
+6. En production, **pull** la nouvelle image et **instancier** de nouveaux conteneurs à partir de celle-ci.
+7. La nouvelle version de l'app est déployée !
 
 > Faire un fichier `Makefile` pour simplifier en local, ou un alias ou un script. Vous pouvez aussi utiliser les [hooks de git](https://git-scm.com/book/ms/v2/Customizing-Git-Git-Hooks). L'idée c'est que vous ne devez pas pouvoir échapper à votre procédure. Si vous oubliez de faire quelque chose, la procédure ne doit pas être déclenchée (pas de procédure incomplète) et vous devez être prévenu par un message d'erreur. **Faire en sorte d'avoir le moins de choses auxquelles penser**. Par ex, le push sur le dépôt distant devrait être automatiquement empêché si la suite de tests en local ne passe pas.
 
@@ -120,4 +121,4 @@ Il existe de nombreuses façons de mettre de déployer des images Docker, à vou
 
 ## Références
 
-- [Containerize a PHP application](https://docs.docker.com/guides/php/containerize/)
+- [Containerize a PHP application](https://docs.docker.com/guides/php/containerize/), très bon guide sur la mise en place d'un projet Docker avec une pipeline CI/CD
