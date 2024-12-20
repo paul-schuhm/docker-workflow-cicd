@@ -1,7 +1,6 @@
-# Containerize a PHP application
+# Démo - Containerize a PHP application
 
 
-https://docs.docker.com/guides/php/run-tests/#run-tests-when-developing-locally
 
 ## Références
 
