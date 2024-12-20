@@ -15,25 +15,29 @@ Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
 
 ## Tester
 
-- **Avant** le build (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **CI**
-- **Pendant** le build. Test **app+dépendances internes** (environnement d'exec)
-- **Après** le build. Test app + dépendances internes + **dep externes** (variables d'env, base de données, API), tests d'intégration/end2end, etc.
+On peut réaliser des tests à différentes étapes:
+
+- **Avant** le *build* (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **CI**
+- **Pendant** le *build*. Test **app+dépendances internes** (environnement d'exec)
+- **Après** le *build*. Test app + dépendances internes + **dep externes** (variables d'env, base de données, API), tests d'intégration/end2end, etc.
+
+Ce qui est *critique* c'est de **tester l'image qui sera déployée** (il faut que ce soit exactement la même !)
 
 ## Workflow
 
 1. **Développe** ;
 2. **Test** (app) : `docker compose run --build --rm server ./vendor/bin/phpunit tests/HelloWorldTest.php`. Voir le résultat sous forme de status code `echo $?`
 
-> Si `target` non précisée, docker utilise le dernier stage
+> Dans le cas d'un [multi-staged build](https://docs.docker.com/build/building/multi-stage/), si la valeur `target` n'est pas précisée, docker utilise le dernier stage du `Dockerfile`.
 
-3. **Build et test en local** (app+deps): `docker build -t php-docker-image-test --progress plain --no-cache --target test .` (ne pas déclencher un CI/CD qui fail pour rien)
+3. **Build+test en local** (app+deps): `docker build -t php-docker-image-test --progress plain --no-cache --target test .` (ne pas déclencher un CI/CD qui fail pour rien)
 4. Si tests passent, commit puis **push** sur le dépôt principal. Un hook (merge, commit) déclenche **un job CD** (avec Github Actions ici):
-   1. Build et test;
-   2. Build et push;
-5. La nouvelle image **est publiée sur un registre**, prête à être utilisée;
+   1. **Build+test**;
+   2. **Build+push**;
+5. La nouvelle image **est publiée sur un registre**, avec un tag unique, prête à être utilisée;
 6. En production, **pull** la nouvelle image et **instancier** conteneurs à partir de celle-ci.
 
-> Faire un fichier Makefile pour simplifier.
+> Faire un fichier `Makefile` pour simplifier en local, ou un alias ou un script. Vous pouvez aussi utiliser les [hooks de git](https://git-scm.com/book/ms/v2/Customizing-Git-Git-Hooks). L'idée c'est que vous ne devez pas pouvoir échapper à votre procédure. Si vous oubliez de faire quelque chose, la procédure ne doit pas être déclenchée (pas de procédure incomplète) et vous devez être prévenu par un message d'erreur. **Faire en sorte d'avoir le moins de choses auxquelles penser**. Par ex, le push sur le dépôt distant devrait être automatiquement empêché si la suite de tests en local ne passe pas.
 
 ## Gestion des environnements
 
