@@ -1,0 +1,18 @@
+#TODO:A composer avec le fichier compose.yaml
+services:
+  server:
+    image:
+      #image publiée sur registre
+      #${REGISTER}/docker-workflow-cicd:${VERSION}
+    ports:
+      - ${PORT}:80
+    depends_on:
+      db:
+        condition: service_healthy
+    secrets:
+      - db-password
+    environment: # A déplacer dans fichier d'environnement
+      - PASSWORD_FILE_PATH=/run/secrets/db-password
+      - DB_HOST=db
+      - DB_NAME=example
+      - DB_USER=root
