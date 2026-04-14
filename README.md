@@ -9,34 +9,39 @@ Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
   - [Workflow](#workflow)
   - [Gestion des différents environnements](#gestion-des-différents-environnements)
   - [Mise en production Côté serveur (rapatrier la nouvelle image)](#mise-en-production-côté-serveur-rapatrier-la-nouvelle-image)
-  - [Workflow direct (sans passer par une plateforme CI/CD ni registre)](#workflow-direct-sans-passer-par-une-plateforme-cicd-ni-registre)
+  - [Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)](#workflow-direct-minimal-sans-passer-par-une-plateforme-cicd-ni-registre)
   - [Références](#références)
-
 
 ## Tester
 
-On peut réaliser des tests à différentes étapes:
+Dans une CI :
 
-- **Avant** le *build* (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **CI**
-- **Pendant** le *build*. Test **app+dépendances internes** (environnement d'exec)
-- **Après** le *build*. Test app + dépendances internes + **dep externes** (variables d'env, base de données, API), tests d'intégration/end2end, etc.
+- **Avant** le *build* (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **Test du code (via une image de test)**. Le faire *via* une image :
+  - environnement identique pour tous
+  - isolation complète
+  - reproductibilité
+- **Après** le *build*. Test app + dépendances internes + **dep externes** (variables d'env, base de données, API), tests d'intégration/end2end, etc. **Test de l'artefact** (**via l'image de prod**)
 
 Ce qui est *critique* c'est de **tester l'image qui sera déployée** (il faut que ce soit exactement la même !)
 
 ## Workflow
 
 1. **Développe** ;
-2. **Test** (app) : `docker compose run --build --rm server ./vendor/bin/phpunit tests/HelloWorldTest.php`. Voir le résultat sous forme de status code `echo $?`
+2. **Test** en local *via un conteneur*. Voir le résultat sous forme de status code (`echo $?`). A placer par ex sur hook git `pre-commit`. Ici : 
 
-> Dans le cas d'un [multi-staged build](https://docs.docker.com/build/building/multi-stage/), si la valeur `target` n'est pas précisée, docker utilise le dernier stage du `Dockerfile`, ici l'image pour la prod.
+~~~bash
+#utilise stage development (voir fichier compose)
+docker compose run --build --rm server ./vendor/bin/phpunit tests/HelloWorldTest.php
+~~~
 
-3. **Build+test en local** (app+deps): `docker build -t php-docker-image-test --progress plain --no-cache --target test .` (ne pas déclencher un CI/CD qui fail pour rien)
-4. Si tests passent en local, **commit** puis **push** sur le dépôt *remote*. Un *hook* (merge, commit) déclenche **un job CD** (avec Github Actions ici):
-   1. **Build+test**;
-   2. **Build+push**;
-5. La nouvelle image **est publiée sur un registre**, avec un tag unique, prête à être utilisée;
-6. En production, **pull** la nouvelle image et **instancier** de nouveaux conteneurs à partir de celle-ci.
-7. La nouvelle version de l'app est déployée !
+3. Si tests passent, **commit** puis **push** sur le dépôt *remote*. Un *évènement* (par ex commit sur main, PR + merge) déclenche **un job CI** (avec Github Actions ici):
+   1. **Build image de test/test unitaires** (ex: lancement de la suite de tests *pendant* le build d'une image de test);
+   2. **Build image de prod**;
+   3. **Tests** **externes** sur image prod (contre d'autres conteneurs comme bdd, redis, services ext, etc.)
+   4. **Steps supplémentaires** : analyse image (Docker Scout), SonarQube, etc.
+4. Si tests passent, **push** nouvelle image sur un registre ave un tag unique (version, hash commit). Fin de la CI.
+5. Début de la CD : déploiement de l'image validée (pull + rollout) ! **pull** la nouvelle image et **instancier (run)** de nouveaux conteneurs à partir de celle-ci.
+6. Déploiement de la nouvelle version.
 
 > Faire un fichier `Makefile` pour simplifier en local, ou un alias ou un script. Vous pouvez aussi utiliser les [hooks de git](https://git-scm.com/book/ms/v2/Customizing-Git-Git-Hooks). L'idée c'est que vous ne devez pas pouvoir échapper à votre procédure. Si vous oubliez de faire quelque chose, la procédure ne doit pas être déclenchée (pas de procédure incomplète) et vous devez être prévenu par un message d'erreur. **Faire en sorte d'avoir le moins de choses auxquelles penser**. Par ex, le push sur le dépôt distant devrait être automatiquement empêché si la suite de tests en local ne passe pas.
 
@@ -61,7 +66,7 @@ Une mise en production doit:
 
 Un exemple :
 
-1. Avoir les fichiers compose en prod, plusieurs solutions : 
+1. Avoir les fichiers compose en prod, plusieurs solutions :
    1. Cloner le dépôt sur le serveur de prod pour récup les fichiers compose
    2. Créer un dépôt dédié uniquement aux fichiers compose
    3. Copier directement dans le CI/CD les fichiers compose présents dans le dépôt (plusieurs solutions)
@@ -70,7 +75,7 @@ Un exemple :
 
 Pour *pull* dernière image **et être réversible** on peut :
 
-1. Placer l'id de la nouvelle image dans un fichier d'env (`.env.x.y.z`) faire un lien symbolique `ln -s .env.x.y.z .env`. Le fichier `.env` pointe sur le dernier fichier `.env.x.y.z` contenant la version de la nouvelle image (nouveau tag) ; 
+1. Placer l'id de la nouvelle image dans un fichier d'env (`.env.x.y.z`) faire un lien symbolique `ln -s .env.x.y.z .env`. Le fichier `.env` pointe sur le dernier fichier `.env.x.y.z` contenant la version de la nouvelle image (nouveau tag) ;
 2. Le fichier `.env` est utilisé par le fichier `compose.yaml`: il utilise et interpole la variable d'environnement pour le tag de l'image à utiliser dans la section `services`: `image: app:${VERSION}`
 3. Si besoin d'avancer à la version `x.y.z` :
    1. Créer un nouveau fichier `.env.x.y.z`
@@ -105,12 +110,11 @@ REGISTRE=vendor
 VERSION=1.1
 ~~~
 
-
 > **Docker n'est pas un Framework de déploiement**. Docker offre l'artefact et la plateforme standardisés, ne vous dit pas comment vous devez distribuer vos artefacts.
 
 Il existe de nombreuses façons de mettre de déployer des images Docker, à vous d'utiliser la plus adaptée à votre contexte. Ce qui compte c'est que votre mise en production possède les caractéristiques énoncées plus haut (reproductible, déterministe, simple et réversible)
 
-## Workflow direct (sans passer par une plateforme CI/CD ni registre)
+## Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)
 
 1. Développe;
 2. Test;
@@ -120,7 +124,6 @@ Il existe de nombreuses façons de mettre de déployer des images Docker, à vou
 > L'image est directement envoyée via la sortie standard (stout) sur le serveur et chargée depuis l'entrée standard (stdint)
 
 5. Instancie nouveau conteneur: `ssh user@ip docker compose up -d app`
-
 
 ## Références
 
