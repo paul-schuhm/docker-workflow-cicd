@@ -1,22 +1,20 @@
-# Démo - Containerize a PHP application
+# Démo - Stratégies de CI/CD d'une application web conteneurisée
 
-Une démo de CI/CD possible d'une application PHP sur la plateforme Docker.
-
-> En cours de construction...
-
-- [Démo - Containerize a PHP application](#démo---containerize-a-php-application)
+- [Démo - Stratégies de CI/CD d'une application web conteneurisée](#démo---stratégies-de-cicd-dune-application-web-conteneurisée)
   - [Tester](#tester)
   - [Workflow](#workflow)
   - [Gestion des différents environnements](#gestion-des-différents-environnements)
-  - [Mise en production Côté serveur (rapatrier la nouvelle image)](#mise-en-production-côté-serveur-rapatrier-la-nouvelle-image)
-  - [Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)](#workflow-direct-minimal-sans-passer-par-une-plateforme-cicd-ni-registre)
+  - [Mise en production côté serveur (rapatrier la nouvelle image)](#mise-en-production-côté-serveur-rapatrier-la-nouvelle-image)
+  - [Stratégie possible](#stratégie-possible)
+  - [*Blue Green deployment*](#blue-green-deployment)
+  - [Alternative simple : Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)](#alternative-simple--workflow-direct-minimal-sans-passer-par-une-plateforme-cicd-ni-registre)
   - [Références](#références)
 
 ## Tester
 
 Dans une CI :
 
-- **Avant** le *build* (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. **Test du code (via une image de test)**. Le faire *via* une image :
+- **Avant** le *build* (tests sources, dev, avant de commit/merge sur le dépôt principal). Mettre en place de l'analyse statique de code, suite de tests, force bonnes pratiques (linter), detect smells, etc. à placer sur un hook pre-commit. **Test du code (via une image de test)** :
   - environnement identique pour tous
   - isolation complète
   - reproductibilité
@@ -54,29 +52,31 @@ docker compose run --build --rm server ./vendor/bin/phpunit tests/HelloWorldTest
 - Chaque fichier compose utilise son fichier d'env;
 - Externalisation [des secrets](https://docs.docker.com/engine/swarm/secrets/) (à ne pas placer en variables d'environnement!)
 
-## Mise en production Côté serveur (rapatrier la nouvelle image)
+## Mise en production côté serveur (rapatrier la nouvelle image)
 
 Une mise en production doit:
 
-- Être **réversible** (rollback);
-- Être **définie par une séquence d'instructions déterministe**
-- **Idempotente** : déclencher 2 fois la procédure avec les mêmes artefacts revient à le faire une fois;
-- Gérer automatiquement les configurations
-- Être déclenchée idéalement par **une seule commande/instruction**
+- Être **réversible** (*rollback*) ;
+- Être **définie par une séquence d'instructions déterministe** ;
+- **Idempotente** : déclencher 2 fois la procédure avec les mêmes artefacts revient à le faire une fois ;
+- Gérer automatiquement les configurations ;
+- Être déclenchée idéalement par **une seule commande/instruction**.
 
 Un exemple :
 
-1. Avoir les fichiers compose en prod, plusieurs solutions :
+1. Disposer des fichiers compose sur le serveur de prod, plusieurs solutions :
    1. Cloner le dépôt sur le serveur de prod pour récup les fichiers compose
    2. Créer un dépôt dédié uniquement aux fichiers compose
    3. Copier directement dans le CI/CD les fichiers compose présents dans le dépôt (plusieurs solutions)
    4. Etc.
 2. Pull la dernière image puis compose up
 
+## Stratégie possible
+
 Pour *pull* dernière image **et être réversible** on peut :
 
 1. Placer l'id de la nouvelle image dans un fichier d'env (`.env.x.y.z`) faire un lien symbolique `ln -s .env.x.y.z .env`. Le fichier `.env` pointe sur le dernier fichier `.env.x.y.z` contenant la version de la nouvelle image (nouveau tag) ;
-2. Le fichier `.env` est utilisé par le fichier `compose.yaml`: il utilise et interpole la variable d'environnement pour le tag de l'image à utiliser dans la section `services`: `image: app:${VERSION}`
+2. Le fichier `.env` est utilisé par le fichier `compose.yaml`: il utilise et interpole la variable d'environnement pour le tag de l'image à utiliser dans la section `services`: `${REGISTRE}/app:${VERSION}`
 3. Si besoin d'avancer à la version `x.y.z` :
    1. Créer un nouveau fichier `.env.x.y.z`
    2. Créer le lien symbolique `ln -s .env.x.y.z .env`
@@ -114,17 +114,21 @@ VERSION=1.1
 
 Il existe de nombreuses façons de mettre de déployer des images Docker, à vous d'utiliser la plus adaptée à votre contexte. Ce qui compte c'est que votre mise en production possède les caractéristiques énoncées plus haut (reproductible, déterministe, simple et réversible)
 
-## Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)
+## *Blue Green deployment*
+
+> À venir...
+
+## Alternative simple : Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)
 
 1. Développe;
 2. Test;
 3. Build et test : `docker build --platform <votre plateforme cible> -t app:1 .`
 4. Compresse et déploie image via SSH avec scp : `docker save app:1 | gzip | ssh user@ip docker load`
 
-> L'image est directement envoyée via la sortie standard (stout) sur le serveur et chargée depuis l'entrée standard (stdint)
+> L'image est directement envoyée via la sortie standard (stout) sur le serveur et chargée depuis l'entrée standard (stdin)
 
 5. Instancie nouveau conteneur: `ssh user@ip docker compose up -d app`
 
 ## Références
 
-- [Containerize a PHP application](https://docs.docker.com/guides/php/containerize/), très bon guide sur la mise en place d'un projet Docker avec une pipeline CI/CD
+- [Containerize a PHP application](https://docs.docker.com/guides/php/containerize/), bon guide sur la mise en place d'un projet Docker avec une pipeline CI/CD
