@@ -5,9 +5,11 @@
   - [Workflow](#workflow)
   - [Gestion des différents environnements](#gestion-des-différents-environnements)
   - [Mise en production côté serveur (rapatrier la nouvelle image)](#mise-en-production-côté-serveur-rapatrier-la-nouvelle-image)
-  - [Stratégie possible](#stratégie-possible)
-  - [*Blue Green deployment*](#blue-green-deployment)
-  - [Alternative simple : Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)](#alternative-simple--workflow-direct-minimal-sans-passer-par-une-plateforme-cicd-ni-registre)
+  - [Stratégies de déploiement](#stratégies-de-déploiement)
+    - [Déploiement manuel réversible](#déploiement-manuel-réversible)
+    - [*Blue Green deployment*](#blue-green-deployment)
+    - [Déploiement avec Docker Swarm](#déploiement-avec-docker-swarm)
+    - [Alternative simple : Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)](#alternative-simple--workflow-direct-minimal-sans-passer-par-une-plateforme-cicd-ni-registre)
   - [Références](#références)
 
 ## Tester
@@ -43,6 +45,11 @@ docker compose run --build --rm server ./vendor/bin/phpunit tests/HelloWorldTest
 
 > Faire un fichier `Makefile` pour simplifier en local, ou un alias ou un script. Vous pouvez aussi utiliser les [hooks de git](https://git-scm.com/book/ms/v2/Customizing-Git-Git-Hooks). L'idée c'est que vous ne devez pas pouvoir échapper à votre procédure. Si vous oubliez de faire quelque chose, la procédure ne doit pas être déclenchée (pas de procédure incomplète) et vous devez être prévenu par un message d'erreur. **Faire en sorte d'avoir le moins de choses auxquelles penser**. Par ex, le push sur le dépôt distant devrait être automatiquement empêché si la suite de tests en local ne passe pas.
 
+
+<!-- 
+Registres privés : Docker Trusted Register (DTR), Amazon Elastic Container Registry (ECR), etc.
+ -->
+
 ## Gestion des différents environnements
 
 > Chaque environnement peut définir des valeurs (variables d'env), des valeurs secretes (clé)
@@ -71,7 +78,9 @@ Un exemple :
    4. Etc.
 2. Pull la dernière image puis compose up
 
-## Stratégie possible
+## Stratégies de déploiement
+
+### Déploiement manuel réversible
 
 Pour *pull* dernière image **et être réversible** on peut :
 
@@ -79,8 +88,8 @@ Pour *pull* dernière image **et être réversible** on peut :
 2. Le fichier `.env` est utilisé par le fichier `compose.yaml`: il utilise et interpole la variable d'environnement pour le tag de l'image à utiliser dans la section `services`: `${REGISTRE}/app:${VERSION}`
 3. Si besoin d'avancer à la version `x.y.z` :
    1. Créer un nouveau fichier `.env.x.y.z`
-   2. Créer le lien symbolique `ln -s .env.x.y.z .env`
-   3. Relancer les services basées sur les images mise à jour (`docker compose up`)
+   2. Créer/Refaire le lien symbolique `ln -sfn .env.x.y.z .env`
+   3. Relancer les services basées sur les images mise à jour (par ex: `docker compose -f compose.yaml --env-file .env.prod --env-file .env up`)
 4. Si besoin de *rollback*, il suffit de repointer sur le fichier d'env précédent et relancer les conteneurs à partir de l'image précédente (`up`)
 
 > Cette méthode de [liens symboliques](https://fr.wikipedia.org/wiki/Lien_symbolique) est très utilisée et commode. C'est [ce que fait](https://capistranorb.com/documentation/getting-started/rollbacks/) par exemple [l'excellent outil Capistrano](https://capistranorb.com/).
@@ -114,11 +123,15 @@ VERSION=1.1
 
 Il existe de nombreuses façons de mettre de déployer des images Docker, à vous d'utiliser la plus adaptée à votre contexte. Ce qui compte c'est que votre mise en production possède les caractéristiques énoncées plus haut (reproductible, déterministe, simple et réversible)
 
-## *Blue Green deployment*
+### *Blue Green deployment*
 
 > À venir...
 
-## Alternative simple : Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)
+### Déploiement avec Docker Swarm
+
+> À venir...
+
+### Alternative simple : Workflow direct minimal (sans passer par une plateforme CI/CD ni registre)
 
 1. Développe;
 2. Test;
